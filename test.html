@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Suggestion Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 16px;
+        }
+        button {
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4f46e5;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            min-height: 50px;
+        }
+        .loading {
+            color: #6366f1;
+        }
+        .error {
+            color: #dc2626;
+        }
+        .success {
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test AI Suggestion</h1>
+    
+    <input type="text" id="taskInput" placeholder="Enter a task (e.g., buy groceries)" value="buy groceries">
+    
+    <button onclick="getSuggestion()">Get AI Suggestion</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function getSuggestion() {
+            const taskTitle = document.getElementById('taskInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!taskTitle) {
+                resultDiv.innerHTML = '<p class="error">Please enter a task!</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="loading">Getting AI suggestion...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/get-suggestion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        taskTitle: taskTitle,
+                        dueDate: null,
+                        priority: 'medium'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<p class="success"><strong>💡 AI Suggestion:</strong><br>${data.suggestion}</p>`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<p class="error">Error: Could not get suggestion. Make sure your server is running on localhost:3001</p>';
+            }
+        }
+    </script>
+</body>
+</html>
