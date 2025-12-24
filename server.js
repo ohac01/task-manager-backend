@@ -50,7 +50,7 @@ app.post('/api/get-suggestion', async (req, res) => {
       return res.json({ links });
     }
     
-    const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     const locationText = userLocation ? `User location: ${userLocation}` : 'User location: Israel';
     
@@ -158,7 +158,7 @@ app.post('/api/prioritize-task', async (req, res) => {
   try {
     const { taskTitle, existingTasks, userPriority } = req.body;
     
-    const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     // Create a list of existing task titles for context
     const taskList = existingTasks.map((t, idx) => `${idx + 1}. ${t.title}`).join('\n');
