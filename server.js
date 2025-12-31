@@ -201,6 +201,67 @@ Return ONLY the number, nothing else.`;
   }
 });
 
+// New endpoint: Prioritize entire task list
+app.post('/api/prioritize-list', async (req, res) => {
+  try {
+    const { tasks } = req.body;
+    
+    if (!tasks || tasks.length === 0) {
+      return res.json({ prioritizedTasks: [] });
+    }
+    
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    // Create task list with details
+    const taskList = tasks.map((t, idx) => {
+      const details = [];
+      if (t.dueDate) details.push(`due: ${t.dueDate}`);
+      if (t.priority && t.priority !== 'none' && t.priority !== 'auto') details.push(`priority: ${t.priority}`);
+      
+      const detailsStr = details.length > 0 ? ` (${details.join(', ')})` : '';
+      return `${idx + 1}. ${t.title}${detailsStr}`;
+    }).join('\n');
+    
+    const prompt = `You are prioritizing a task list. Reorder these tasks by importance and urgency.
+
+Current tasks:
+${taskList}
+
+Consider:
+1. Urgency (deadlines, time-sensitive matters)
+2. Importance (impact on life, health, finances, relationships)
+3. Dependencies (tasks that block other tasks)
+4. User's specified priorities (high/medium/low) - respect these but can adjust if clearly wrong
+
+Return ONLY a JSON array of task numbers in the new priority order (1 = highest priority).
+Example: If the best order is task 3, then 1, then 2, return: [3, 1, 2]
+
+Return ONLY the JSON array, no additional text or markdown.`;
+    
+    const result = await model.generateContent(prompt);
+    let responseText = result.response.text().trim();
+    
+    // Clean response
+    responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    const newOrder = JSON.parse(responseText);
+    
+    // Validate the response
+    if (!Array.isArray(newOrder) || newOrder.length !== tasks.length) {
+      throw new Error('Invalid response format');
+    }
+    
+    // Reorder tasks based on AI response
+    const prioritizedTasks = newOrder.map(idx => tasks[idx - 1]);
+    
+    res.json({ prioritizedTasks });
+  } catch (error) {
+    console.error('Error prioritizing task list:', error);
+    // Return original order on error
+    res.json({ prioritizedTasks: req.body.tasks });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
